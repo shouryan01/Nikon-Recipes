@@ -2,7 +2,7 @@
 
 A curated collection of **186 Nikon Creative Picture Control recipes** (.NP3 / .NCP files) for Nikon Z-series cameras. These files can be loaded directly into a compatible Nikon camera or via Nikon's NX Studio software to instantly apply a distinct color grade or film simulation in-camera.
 
-Up to date as of May 4, 2026.
+Up to date as of Aug 14, 2026.
 
 ---
 
@@ -18,12 +18,8 @@ Nikon's Creative Picture Controls let you save custom combinations of tone curve
 Nikon-Recipes/
 ├── Nikon Creators/        # 110 official recipes from Nikon's global creator program
 ├── Color Grading/         # 30 official Nikon color grading presets
-├── NikonPC/               #  2 Nikon Picture Control classics
-└── Third Party Creators/  # 44 recipes from independent photographers
-    ├── Alex Armitage/
-    ├── Filmstill/
-    ├── Scott Tucker/
-    └── Stephen Morais/
+├── NikonPC/               # Classic Nikon Picture Controls from nikonpc.com
+└── Third Party Creators/  # Recipes from independent photographers
 ```
 
 ---
@@ -59,7 +55,7 @@ Two classic Nikon Picture Control presets:
 - `Kodachrome.NP3` — emulates the iconic warm, punchy Kodachrome film
 - `Kodak T-Max 400.NCP` — emulates the fine-grain monochrome T-Max 400 film stock
 
-### Third Party Creators — 44 recipes
+### Third Party Creators
 
 #### Alex Armitage — 5 recipes
 Film-inspired emulations based on real analog stocks:
