@@ -1,6 +1,6 @@
 # Nikon Creative Picture Control Recipes
 
-A curated collection of **186 Nikon Creative Picture Control recipes** (.NP3 / .NCP files) for Nikon Z-series cameras. These files can be loaded directly into a compatible Nikon camera or via Nikon's NX Studio software to instantly apply a distinct color grade or film simulation in-camera.
+A collection of all **142 Nikon Creative Picture Control recipes** (.NP3 / .NCP files) for Nikon Z-series cameras. These files can be loaded directly into a compatible Nikon camera or via Nikon's NX Studio software to instantly apply a distinct color grade or film simulation in-camera.
 
 Up to date as of Aug 19, 2026.
 
@@ -26,7 +26,7 @@ Nikon-Recipes/
 
 ## Collections
 
-### Nikon Creators — 110 recipes
+### Nikon Creators — 112 recipes
 Official recipes contributed by photographers and videographers in Nikon's global creator program. Covers a wide range of moods and styles — film emulation, cinematic looks, portraits, landscapes, street, and more. A few highlights:
 
 | Recipe | Creator | Vibe |
@@ -49,27 +49,29 @@ Nikon's official Color Grading Picture Control presets. Organized into thematic 
 - **Color Mode** series (`Bu`, `Gn`, `TealOr`, `Ye`) — bold single-hue and dual-hue color grades, in both `a` and `b` intensity variants
 - **Negative** series — diverse color negative emulations spanning cyan-blue, green-cyan, red-cyan, teal, yellow-green, and yellow tones, across multiple strength variants
 
-### NikonPC — 2 recipes
-Two classic Nikon Picture Control presets:
+### NikonPC
+Classic Nikon Picture Control presets:
 
 - `Kodachrome.NP3` — emulates the iconic warm, punchy Kodachrome film
 - `Kodak T-Max 400.NCP` — emulates the fine-grain monochrome T-Max 400 film stock
 
 ### Third Party Creators
 
-#### Alex Armitage — 5 recipes
+If you are an independent creator who wants to show off their recipes, submit a PR!
+
+#### Alex Armitage
 Film-inspired emulations based on real analog stocks:
 `Ektar 100`, `Kodak Gold 200`, `Portra 800`, `Provia 100F`, `Warm Autumn`
 
-#### Filmstill — 12 recipes
+#### Filmstill
 A diverse set of film stock simulations and cinematic looks:
 `Classic Chrome`, `Filmic B&W`, `Filmic`, `Nostalgic Negative`, `Goldmatic`, `ARTE B&W`, `Astia`, `Classic Neg`, `Portra`, `Velvia`, `KOLORA`, `KOLORA Pushed`
 
-#### Scott Tucker — 8 recipes
+#### Scott Tucker
 Street and portrait-oriented film emulations. Full details at [scotttuckerphoto.com](https://www.scotttuckerphoto.com/blog/my-first-6-nikon-z-recipes-out-now-completely-free):
 `Gold 200`, `Ilford 400` (three variants), `Leiter`, `Leiter CLR`, `Vintage Film`, `Vintage Film HI`
 
-#### Stephen Morais — 19 recipes
+#### Stephen Morais
 An extensive library of analog film stock emulations:
 `Agfa Ultra 100`, `Cubano`, `Ektachrome E100`, `Fuji 400H`, `Fuji Provia 100F`, `Fuji Solaris 100`, `Kodachrome`, `Kodak Ektar 100`, `Kodak Gold 200` (standard & push), `Kodak Portra 160/400/800`, `Leica STD`, `Leica Vivid`, `LoFi`, `Optima Colour 200`, `Lomography 3`
 
