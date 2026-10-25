@@ -35,6 +35,10 @@ for (const p of files) {
   const buf = readFileSync(p)
   try {
     const data = deserialize(buf)
+    // Detect Nikon Monochrome base Picture Control IDs (0x0655 Deep Tone Mono, 0x064d Mono)
+    if (buf[52] === 0x06) {
+      data.saturation = -100
+    }
     const parts = cleanPath.split('/')
     const category = parts[0]
     let creator = 'Nikon'

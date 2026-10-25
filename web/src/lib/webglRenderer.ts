@@ -1,5 +1,5 @@
 import type { PictureControlSettings } from '../types/recipe'
-import { buildToneLut, applyPictureControl } from './colorEngine'
+import { buildToneLut, buildBlenderLut, wheelToTint, applyPictureControl } from './colorEngine'
 
 const VS_SOURCE = `
 attribute vec2 a_position;
@@ -13,17 +13,22 @@ void main() {
 `
 
 const FS_SOURCE = `
-precision mediump float;
+precision highp float;
 varying vec2 v_texCoord;
 
 uniform sampler2D u_image;
 uniform sampler2D u_toneLut;
+uniform sampler2D u_blenderLut;
 uniform float u_splitPos; // 0.0 to 1.0, -1.0 to disable
-uniform float u_saturation;
+uniform float u_satFactor;
+uniform float u_hasBlender;
+uniform float u_hasGrading;
 uniform float u_balance;
-uniform vec3 u_shTint;
+uniform float u_blending;
+uniform vec3 u_dkTint;
 uniform vec3 u_mtTint;
-uniform vec3 u_hlTint;
+uniform vec3 u_brTint;
+uniform vec3 u_zoneLuma; // (dkY, mtY, brY) normalized to -1..+1
 
 vec3 rgb2hsl(vec3 c) {
   float cMin = min(min(c.r, c.g), c.b);
@@ -40,7 +45,7 @@ vec3 rgb2hsl(vec3 c) {
     }
     
     if (c.r == cMax) {
-      hsl.x = (c.g - c.b) / delta;
+      hsl.x = (c.g - c.b) / delta + (c.g < c.b ? 6.0 : 0.0);
     } else if (c.g == cMax) {
       hsl.x = 2.0 + (c.b - c.r) / delta;
     } else {
@@ -52,8 +57,7 @@ vec3 rgb2hsl(vec3 c) {
 }
 
 float hue2rgb(float p, float q, float t) {
-  if (t < 0.0) t += 1.0;
-  if (t > 1.0) t -= 1.0;
+  t = fract(t);
   if (t < 1.0/6.0) return p + (q - p) * 6.0 * t;
   if (t < 1.0/2.0) return q;
   if (t < 2.0/3.0) return p + (q - p) * (2.0/3.0 - t) * 6.0;
@@ -61,7 +65,7 @@ float hue2rgb(float p, float q, float t) {
 }
 
 vec3 hsl2rgb(vec3 hsl) {
-  if (hsl.y == 0.0) return vec3(hsl.z);
+  if (hsl.y <= 0.0) return vec3(hsl.z);
   float q = hsl.z < 0.5 ? hsl.z * (1.0 + hsl.y) : hsl.z + hsl.y - hsl.z * hsl.y;
   float p = 2.0 * hsl.z - q;
   return vec3(
@@ -80,28 +84,57 @@ void main() {
     return;
   }
   
-  // 1. Tone curve lookup
-  float r = texture2D(u_toneLut, vec2(original.r, 0.5)).r;
-  float g = texture2D(u_toneLut, vec2(original.g, 0.5)).r;
-  float b = texture2D(u_toneLut, vec2(original.b, 0.5)).r;
-  vec3 color = vec3(r, g, b);
+  vec3 color = original.rgb;
+
+  // 1. Luminance-preserving Tone Curve & Tone Sliders (YCbCr additive luminance)
+  float y0 = dot(color, vec3(0.299, 0.587, 0.114));
+  float y1 = texture2D(u_toneLut, vec2(clamp(y0, 0.0, 1.0), 0.5)).r;
+  color = clamp(color + (y1 - y0), 0.0, 1.0);
   
-  // 2. Saturation
-  if (u_saturation != 1.0) {
+  // 2. 8-Channel Color Blender (sampled from 256x1 RGBA Hue LUT)
+  if (u_hasBlender > 0.5) {
     vec3 hsl = rgb2hsl(color);
-    hsl.y = clamp(hsl.y * u_saturation, 0.0, 1.0);
-    color = hsl2rgb(hsl);
+    if (hsl.y > 0.02) {
+      vec4 bl = texture2D(u_blenderLut, vec2(hsl.x, 0.5)) * 255.0;
+      float dhDeg = (bl.r - 128.0) / 1.8;
+      float dsRatio = (bl.g - 128.0) / 110.0;
+      float dbCoeff = (bl.b - 128.0) / 240.0;
+
+      float satWeight = min(1.0, pow(hsl.y, 0.35) * 1.35);
+      float lClamped = clamp(hsl.z, 0.0, 1.0);
+      float lumWeight = pow(lClamped, 0.65) * (1.0 - 0.3 * lClamped);
+      float dlTotal = dbCoeff * satWeight * lumWeight;
+
+      hsl.x = fract(hsl.x + dhDeg / 360.0);
+      hsl.y = clamp(hsl.y * (1.0 + dsRatio), 0.0, 1.0);
+      hsl.z = clamp(hsl.z + dlTotal, 0.0, 1.0);
+      color = hsl2rgb(hsl);
+    }
+  }
+
+  // 3. Global Saturation in YCbCr chrominance space
+  if (u_satFactor != 1.0) {
+    float yCur = dot(color, vec3(0.299, 0.587, 0.114));
+    color = clamp(vec3(yCur) + (color - vec3(yCur)) * u_satFactor, 0.0, 1.0);
   }
   
-  // 3. 3-Way Color Grading
-  float lum = dot(color, vec3(0.299, 0.587, 0.114));
-  float pivot = clamp(0.5 + u_balance * 0.25, 0.1, 0.9);
-  
-  float wShadows = max(0.0, (pivot - lum) / pivot);
-  float wHighlights = max(0.0, (lum - pivot) / (1.0 - pivot));
-  float wMid = max(0.0, 1.0 - abs(lum - pivot) * 2.0);
-  
-  color += u_shTint * wShadows + u_mtTint * wMid + u_hlTint * wHighlights;
+  // 4. 3-Way Color Grading Split Toning & Zone Brightness
+  if (u_hasGrading > 0.5) {
+    float lum = clamp(dot(color, vec3(0.299, 0.587, 0.114)), 0.0, 1.0);
+    float lAdj = clamp(lum + u_balance * 0.22, 0.0, 1.0);
+    
+    float width = 0.45 + u_blending * 0.25;
+    float span = 0.55 + u_blending * 0.15;
+    float wDark = pow(max(0.0, 1.0 - lAdj / span), 1.5);
+    float wBright = pow(max(0.0, (lAdj - (0.45 - u_blending * 0.15)) / span), 1.5);
+    float midDiff = (lAdj - 0.5) / (width * 0.55);
+    float wMid = exp(-(midDiff * midDiff));
+    
+    float chromaMask = sin(3.14159265 * pow(max(1e-4, lum), 0.75)) * 0.85 + 0.15;
+    float dY = u_zoneLuma.x * wDark + u_zoneLuma.y * wMid + u_zoneLuma.z * wBright;
+    
+    color += (u_dkTint * wDark + u_mtTint * wMid + u_brTint * wBright) * chromaMask + vec3(dY);
+  }
   
   gl_FragColor = vec4(clamp(color, 0.0, 1.0), original.a);
 }
@@ -113,6 +146,7 @@ export class WebGLPreviewer {
   private program: WebGLProgram | null = null
   private imageTexture: WebGLTexture | null = null
   private lutTexture: WebGLTexture | null = null
+  private blenderTexture: WebGLTexture | null = null
   private positionBuffer: WebGLBuffer | null = null
 
   constructor(canvas: HTMLCanvasElement) {
@@ -168,6 +202,7 @@ export class WebGLPreviewer {
 
     this.imageTexture = gl.createTexture()
     this.lutTexture = gl.createTexture()
+    this.blenderTexture = gl.createTexture()
   }
 
   public setImage(image: HTMLImageElement | HTMLCanvasElement) {
@@ -209,7 +244,7 @@ export class WebGLPreviewer {
     const gl = this.gl
     gl.useProgram(this.program)
 
-    // Build Tone LUT texture (256x1 pixels)
+    // 1. Build Tone LUT texture (256x1 LUMINANCE)
     const lut = buildToneLut(settings)
     gl.activeTexture(gl.TEXTURE1)
     gl.bindTexture(gl.TEXTURE_2D, this.lutTexture)
@@ -219,42 +254,65 @@ export class WebGLPreviewer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 256, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, lut)
 
-    // Bind uniforms
-    const uImage = gl.getUniformLocation(this.program, 'u_image')
-    const uToneLut = gl.getUniformLocation(this.program, 'u_toneLut')
-    const uSplitPos = gl.getUniformLocation(this.program, 'u_splitPos')
-    const uSaturation = gl.getUniformLocation(this.program, 'u_saturation')
-    const uBalance = gl.getUniformLocation(this.program, 'u_balance')
-    const uShTint = gl.getUniformLocation(this.program, 'u_shTint')
-    const uMtTint = gl.getUniformLocation(this.program, 'u_mtTint')
-    const uHlTint = gl.getUniformLocation(this.program, 'u_hlTint')
+    // 2. Build 8-Channel Color Blender LUT texture (256x1 RGBA)
+    const { lut: blenderLut, active: hasBlender } = buildBlenderLut(settings)
+    gl.activeTexture(gl.TEXTURE2)
+    gl.bindTexture(gl.TEXTURE_2D, this.blenderTexture)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, blenderLut)
 
-    gl.uniform1i(uImage, 0)
-    gl.uniform1i(uToneLut, 1)
-    gl.uniform1f(uSplitPos, splitPos)
-    gl.uniform1f(uSaturation, 1.0 + (settings.saturation || 0) / 100)
+    // Bind uniforms
+    gl.uniform1i(gl.getUniformLocation(this.program, 'u_image'), 0)
+    gl.uniform1i(gl.getUniformLocation(this.program, 'u_toneLut'), 1)
+    gl.uniform1i(gl.getUniformLocation(this.program, 'u_blenderLut'), 2)
+    gl.uniform1f(gl.getUniformLocation(this.program, 'u_splitPos'), splitPos)
+
+    const sat = settings.saturation || 0
+    const satFactor = sat >= 0 ? 1.0 + (sat / 100) * 1.2 : 1.0 + sat / 100
+    gl.uniform1f(gl.getUniformLocation(this.program, 'u_satFactor'), satFactor)
+    gl.uniform1f(gl.getUniformLocation(this.program, 'u_hasBlender'), hasBlender ? 1.0 : 0.0)
 
     const cg = settings.colorGrading
-    gl.uniform1f(uBalance, cg ? (cg.balance || 0) / 100 : 0)
+    let hasGrading = false
+    let dkR = 0, dkG = 0, dkB = 0, dkY = 0
+    let mtR = 0, mtG = 0, mtB = 0, mtY = 0
+    let brR = 0, brG = 0, brB = 0, brY = 0
 
-    const getTint = (wheel?: { hue: number; chroma: number }) => {
-      if (!wheel || wheel.chroma <= 0) return [0, 0, 0]
-      const rad = (wheel.hue * Math.PI) / 180
-      const str = (wheel.chroma / 100) * 0.35
-      return [
-        Math.cos(rad) * str,
-        Math.cos(rad - (2 * Math.PI) / 3) * str,
-        Math.cos(rad - (4 * Math.PI) / 3) * str,
-      ]
+    if (cg) {
+      const zDark = cg.highlights
+      const zMid = cg.midTone
+      const zBright = cg.shadows
+      if (zDark && (zDark.chroma !== 0 || zDark.brightness !== 0)) {
+        hasGrading = true
+        ;[dkR, dkG, dkB] = wheelToTint(zDark.hue, zDark.chroma)
+        dkY = (zDark.brightness / 100) * 19.5
+      }
+      if (zMid && (zMid.chroma !== 0 || zMid.brightness !== 0)) {
+        hasGrading = true
+        ;[mtR, mtG, mtB] = wheelToTint(zMid.hue, zMid.chroma)
+        mtY = (zMid.brightness / 100) * 19.0
+      }
+      if (zBright && (zBright.chroma !== 0 || zBright.brightness !== 0)) {
+        hasGrading = true
+        ;[brR, brG, brB] = wheelToTint(zBright.hue, zBright.chroma)
+        brY = (zBright.brightness / 100) * 18.5
+      }
     }
 
-    const sh = getTint(cg?.shadows)
-    const mt = getTint(cg?.midTone)
-    const hl = getTint(cg?.highlights)
+    gl.uniform1f(gl.getUniformLocation(this.program, 'u_hasGrading'), hasGrading ? 1.0 : 0.0)
+    gl.uniform1f(gl.getUniformLocation(this.program, 'u_balance'), cg ? (cg.balance || 0) / 100 : 0)
+    gl.uniform1f(
+      gl.getUniformLocation(this.program, 'u_blending'),
+      cg && cg.blending !== undefined ? cg.blending / 100 : 0.5
+    )
 
-    gl.uniform3f(uShTint, sh[0], sh[1], sh[2])
-    gl.uniform3f(uMtTint, mt[0], mt[1], mt[2])
-    gl.uniform3f(uHlTint, hl[0], hl[1], hl[2])
+    gl.uniform3f(gl.getUniformLocation(this.program, 'u_dkTint'), dkR / 255, dkG / 255, dkB / 255)
+    gl.uniform3f(gl.getUniformLocation(this.program, 'u_mtTint'), mtR / 255, mtG / 255, mtB / 255)
+    gl.uniform3f(gl.getUniformLocation(this.program, 'u_brTint'), brR / 255, brG / 255, brB / 255)
+    gl.uniform3f(gl.getUniformLocation(this.program, 'u_zoneLuma'), dkY / 255, mtY / 255, brY / 255)
 
     // Bind image
     gl.activeTexture(gl.TEXTURE0)

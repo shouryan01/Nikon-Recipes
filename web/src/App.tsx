@@ -34,6 +34,9 @@ export default function App() {
     try {
       const buffer = new Uint8Array(await file.arrayBuffer())
       const settings = deserialize(buffer) as PictureControlSettings
+      if (buffer[52] === 0x06) {
+        settings.saturation = -100
+      }
       const customItem: RecipeItem = {
         id: `custom_${Date.now()}`,
         name: settings.name || file.name.replace(/\.np3$/i, ''),

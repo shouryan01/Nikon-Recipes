@@ -18,6 +18,7 @@ interface PreviewViewportProps {
 }
 
 const SAMPLE_IMAGES = [
+  { id: 'me-nef', name: 'me.NEF (Z50 II)', url: '/samples/me-nef.jpg' },
   { id: 'portrait', name: 'Portrait', url: '/samples/portrait.jpg' },
   { id: 'landscape', name: 'Landscape', url: '/samples/landscape.jpg' },
   { id: 'street', name: 'Street / Night', url: '/samples/street.jpg' },

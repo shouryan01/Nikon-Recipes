@@ -1,5 +1,6 @@
 import React from 'react'
 import type { ToneCurveData } from '../types/recipe'
+import { buildSplineLut } from '../lib/colorEngine'
 
 interface ToneCurveGraphProps {
   curve?: ToneCurveData
@@ -14,11 +15,21 @@ export const ToneCurveGraph: React.FC<ToneCurveGraphProps> = ({ curve, className
   const raw = curve?.raw
   const points = curve?.points || []
 
-  // Generate SVG path for the 256 curve points
+  // Generate SVG path for the 256/257 curve points
   let pathD = ''
-  if (raw && raw.length === 256) {
-    const pts = raw.map((val, i) => {
+  if (points.length >= 2) {
+    const spline = buildSplineLut(points)
+    const pts = Array.from(spline, (val, i) => {
       const x = padding + (i / 255) * (width - 2 * padding)
+      const normY = val / 255
+      const y = height - padding - normY * (height - 2 * padding)
+      return `${x.toFixed(1)},${y.toFixed(1)}`
+    })
+    pathD = `M ${pts.join(' L ')}`
+  } else if (raw && (raw.length === 257 || raw.length === 256)) {
+    const denom = raw.length - 1
+    const pts = raw.map((val, i) => {
+      const x = padding + (i / denom) * (width - 2 * padding)
       const normY = val / 32767
       const y = height - padding - normY * (height - 2 * padding)
       return `${x.toFixed(1)},${y.toFixed(1)}`
