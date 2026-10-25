@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 160" width="600" height="160">
+  <rect width="600" height="160" fill="#FFFFFF" rx="16"/>
+
+  <!-- Ship Emblem on left -->
+  <g transform="translate(12, -48) scale(0.95)">
+    
+    <!-- Hull: Elegant curved nef hull -->
+    <path d="M 38 168 C 45 204, 82 222, 134 222 C 186 222, 222 202, 228 168 C 190 178, 76 178, 38 168 Z" fill="#FFE100" />
+    <!-- Hull Upper Deck Trim -->
+    <path d="M 34 164 L 232 164 L 226 172 L 40 172 Z" fill="#111111" />
+    <!-- Hull Keel accent / Siren curve -->
+    <path d="M 30 160 C 26 182, 38 206, 68 220 C 50 210, 42 190, 44 170 Z" fill="#FFFFFF" />
+    <!-- Pedestal stand / base waves -->
+    <path d="M 96 226 L 172 226 L 180 236 L 88 236 Z" fill="#111111" />
+    <circle cx="94" cy="242" r="5" fill="#FFE100" />
+    <circle cx="134" cy="242" r="5" fill="#FFE100" />
+    <circle cx="174" cy="242" r="5" fill="#FFE100" />
+
+    <!-- Masts -->
+    <line x1="88" y1="80" x2="88" y2="164" stroke="#111111" stroke-width="3.5" stroke-linecap="round" />
+    <line x1="138" y1="36" x2="138" y2="164" stroke="#111111" stroke-width="4" stroke-linecap="round" />
+    <line x1="186" y1="92" x2="186" y2="164" stroke="#111111" stroke-width="3" stroke-linecap="round" />
+    <line x1="88" y1="160" x2="32" y2="130" stroke="#111111" stroke-width="2.5" stroke-linecap="round" />
+
+    <!-- Sails (Clean Billowing Geometric Curves) -->
+    <!-- Bowsprit Jib Sail -->
+    <path d="M 36 132 C 60 142, 76 154, 84 158 C 72 144, 58 135, 36 132 Z" fill="#FFFFFF" stroke="#111111" stroke-width="2" stroke-linejoin="round" />
+
+    <!-- Foremast Top Sail -->
+    <path d="M 68 88 C 66 102, 68 114, 88 114 C 108 114, 110 102, 108 88 C 96 92, 80 92, 68 88 Z" fill="#FFFFFF" stroke="#111111" stroke-width="2.2" stroke-linejoin="round" />
+    <!-- Foremast Course Sail -->
+    <path d="M 62 120 C 60 142, 64 154, 88 154 C 112 154, 116 142, 114 120 C 100 126, 76 126, 62 120 Z" fill="#FFFFFF" stroke="#111111" stroke-width="2.5" stroke-linejoin="round" />
+
+    <!-- Mainmast Topgallant Sail -->
+    <path d="M 120 44 C 118 56, 122 64, 138 64 C 154 64, 158 56, 156 44 C 146 47, 130 47, 120 44 Z" fill="#FFE100" stroke="#111111" stroke-width="2" stroke-linejoin="round" />
+    <!-- Mainmast Topsail -->
+    <path d="M 114 72 C 110 92, 114 104, 138 104 C 162 104, 166 92, 162 72 C 150 78, 126 78, 114 72 Z" fill="#FFFFFF" stroke="#111111" stroke-width="2.5" stroke-linejoin="round" />
+    <!-- Mainmast Mainsail (Hero sail) -->
+    <path d="M 106 112 C 100 140, 106 156, 138 156 C 170 156, 176 140, 170 112 C 152 120, 124 120, 106 112 Z" fill="#FFFFFF" stroke="#111111" stroke-width="2.8" stroke-linejoin="round" />
+
+    <!-- Mizzenmast Sail -->
+    <path d="M 170 100 C 168 118, 172 130, 186 130 C 200 130, 204 118, 202 100 C 194 104, 178 104, 170 100 Z" fill="#FFFFFF" stroke="#111111" stroke-width="2.2" stroke-linejoin="round" />
+    <path d="M 166 134 C 164 150, 168 158, 186 158 C 204 158, 208 150, 206 134 C 196 138, 176 138, 166 134 Z" fill="#FFFFFF" stroke="#111111" stroke-width="2.2" stroke-linejoin="round" />
+
+    <!-- Windblown Pennants / Flags (Yellow #FFE100) -->
+    <!-- Main Pennant -->
+    <path d="M 138 34 L 102 38 L 114 44 L 102 50 L 138 46 Z" fill="#FFE100" stroke="#111111" stroke-width="1.5" />
+    <!-- Fore Pennant -->
+    <path d="M 88 78 L 60 82 L 68 86 L 60 90 L 88 87 Z" fill="#FFE100" stroke="#111111" stroke-width="1.5" />
+    <!-- Mizzen Pennant -->
+    <path d="M 186 90 L 164 93 L 170 96 L 164 99 L 186 97 Z" fill="#FFE100" stroke="#111111" stroke-width="1.5" />
+  
+  </g>
+
+  <!-- Divider -->
+  <line x1="265" y1="36" x2="265" y2="124" stroke="#E4E4E7" stroke-width="2"/>
+
+  <!-- Wordmark 'nef' & Subtitle -->
+  <g transform="translate(295, 30)">
+    <!-- 'nef' with Nikon yellow accent dot/bar -->
+    <text x="0" y="62" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="64" letter-spacing="-2" fill="#0A0A0A">
+      nef<tspan fill="#FFE100">.</tspan>
+    </text>
+
+    <!-- Subtitle / Tagline -->
+    <text x="2" y="90" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="600" font-size="13" letter-spacing="2.5" fill="#FFE100">
+      NIKON PICTURE CONTROLS
+    </text>
+  </g>
+</svg>
