@@ -1,4 +1,8 @@
-# Nikon Creative Picture Control Recipes
+<p align="center">
+  <img src="brand/nef-github-banner.png" alt="nef — Nikon Picture Control & RAW Recipe Studio" width="100%" />
+</p>
+
+# nef · Nikon Creative Picture Control Recipes
 
 A collection of all **142 Nikon Creative Picture Control recipes** (.NP3 / .NCP files) for Nikon Z-series cameras. These files can be loaded directly into a compatible Nikon camera or via Nikon's NX Studio software to instantly apply a distinct color grade or film simulation in-camera.
 
