@@ -376,7 +376,7 @@
       "shadows": 0,
       "whiteLevel": 0,
       "blackLevel": 0,
-      "saturation": 0,
+      "saturation": -100,
       "colorBlender": {
         "red": {
           "hue": 0,
@@ -40173,7 +40173,7 @@
       "shadows": 0,
       "whiteLevel": 0,
       "blackLevel": 0,
-      "saturation": 0,
+      "saturation": -100,
       "colorBlender": {
         "red": {
           "hue": 0,
@@ -40537,7 +40537,7 @@
       "shadows": 0,
       "whiteLevel": 0,
       "blackLevel": 0,
-      "saturation": 0,
+      "saturation": -100,
       "colorBlender": {
         "red": {
           "hue": 0,
@@ -44951,7 +44951,7 @@
       "shadows": 0,
       "whiteLevel": 0,
       "blackLevel": 0,
-      "saturation": 0,
+      "saturation": -100,
       "colorBlender": {
         "red": {
           "hue": 0,
@@ -52007,7 +52007,7 @@
       "shadows": 0,
       "whiteLevel": 0,
       "blackLevel": 0,
-      "saturation": 0,
+      "saturation": -100,
       "colorBlender": {
         "red": {
           "hue": 0,
