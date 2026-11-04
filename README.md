@@ -31,6 +31,12 @@ it easier for me (and others) to create beautiful images from recipes the
 community has worked on. The recipes here are contributed by me, by third-party
 creators, and taken from Nikon's official site.
 
+If you're wondering why this repo has commits going back months: for most of its
+life it was just a place to hold recipes. The AI idea came to me a few weeks ago,
+but honestly I didn't do much with it then. The actual work — the working
+pipeline, the culling app, and every AI feature on this page — was all built
+during this hackathon.
+
 ![Discover mode — recipe library, live preview, inspector, and Muse chat](web/docs/screenshots/discover.png)
 
 *Discover: browse 236 recipes, watch the transform live, and tell the chat what to change.*
