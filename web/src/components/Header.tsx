@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { SplitSquareVertical, Columns2, Eye } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
+import { CostButton } from './CostButton'
 import {
   Tooltip,
   TooltipContent,
@@ -103,6 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Theme Toggle (Replacing GitHub link in top right corner) */}
         <ThemeToggle />
+        <CostButton />
       </div>
     </header>
   )

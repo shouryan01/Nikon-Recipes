@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cull Studio — semantic culling (mock AI build)</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>Cull Studio</h1>
+    <p class="sub">Semantic visual culling &amp; grading recommendations for Nikon NEF shoots</p>
+  </div>
+  <div class="banner" id="banner" role="status">Checking API mode…</div>
+</header>
+
+<section class="panel" aria-label="Session">
+  <h2>1 · Session</h2>
+  <div class="row">
+    <label>Folder or single photo path <input id="folder" size="52" placeholder="/path/to/shoot-folder or /path/to/photo.jpg"></label>
+    <button id="importBtn">Import folder / file</button>
+    <label>…or upload photos <input id="files" type="file" multiple accept=".nef,.jpg,.jpeg,.png"></label>
+    <button id="uploadBtn" class="secondary">Upload selected</button>
+    <button id="demoBtn" class="secondary">Load demo session</button>
+    <span id="sessionInfo" class="muted"></span>
+  </div>
+  <div id="apiWait" class="wait" hidden>
+    <span class="spinner" aria-hidden="true"></span>
+    <span id="apiWaitText">Waiting to hear back from the Meta API…</span>
+    <progress id="apiProgress" max="1" value="0"></progress>
+  </div>
+</section>
+
+<main id="studio" hidden>
+  <section class="panel viewer" aria-label="Review">
+    <div class="row spread">
+      <h2>2 · Ranked review</h2>
+      <span id="counts" class="muted"></span>
+    </div>
+    <div class="stage">
+      <img id="big" alt="Selected frame preview">
+      <div id="mask" class="mask" hidden></div>
+      <div id="frameWait" class="frame-wait" hidden><span class="spinner" aria-hidden="true"></span> Analysing this frame…</div>
+    </div>
+    <p id="frameMeta" class="muted"></p>
+    <p id="reason"></p>
+    <ul id="flags" class="flags"></ul>
+    <div class="row">
+      <button data-act="keep">Keep (K)</button>
+      <button data-act="reject" class="danger">Reject (X)</button>
+      <button data-act="star">Star (S)</button>
+      <button id="maskBtn" class="secondary">Toggle SAM mask</button>
+      <button id="prevBtn" class="secondary">← Prev</button>
+      <button id="nextBtn" class="secondary">Next →</button>
+    </div>
+    <div class="row">
+      <label>Voice (simulated — type what you would say)
+        <input id="voiceInput" size="34" placeholder="keep / reject / show me flagged / note: great light">
+      </label>
+      <button id="voiceBtn" class="secondary">Send voice command</button>
+      <button id="micBtn" class="secondary">🎙 Record voice (Muse Voice)</button>
+      <span id="voiceEcho" class="muted" aria-live="polite"></span>
+    </div>
+    <div id="filmstrip" class="filmstrip" aria-label="Ranked frames"></div>
+  </section>
+
+  <aside>
+    <section class="panel" aria-label="Scores">
+      <h2>Why this rank</h2>
+      <dl id="scores"></dl>
+      <h3>Sidecar recommendation (preview)</h3>
+      <pre id="rec" class="rec"></pre>
+    </section>
+    <section class="panel" aria-label="Taste">
+      <h2>Your taste profile</h2>
+      <textarea id="taste" rows="6"></textarea>
+      <p class="muted">Distilled (mock) from your keeps/rejects. Editable; Muse Spark will own this text when connected.</p>
+    </section>
+    <section class="panel" aria-label="Picks">
+      <h2>3 · Picks folder</h2>
+      <p class="muted">Picked NEFs are <strong>moved</strong> (not copied) with sidecar notes. Dry run first — nothing moves until you confirm.</p>
+      <div class="row">
+        <button id="planBtn">Plan picks move</button>
+        <button id="execBtn" class="danger" disabled>Confirm move</button>
+        <button id="undoBtn" class="secondary" disabled>Undo move</button>
+      </div>
+      <pre id="picksOut" class="rec"></pre>
+    </section>
+    <section class="panel" aria-label="Meter">
+      <h2>API meter</h2>
+      <p id="meter" class="muted">Actual spend: $0.00 — API disabled. Estimates appear when the real adapters are connected.</p>
+    </section>
+  </aside>
+</main>
+<script type="module" src="/app.js"></script>
+</body>
+</html>

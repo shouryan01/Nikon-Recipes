@@ -1,11 +1,32 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react'
 import type { PictureControlSettings } from '../types/recipe'
 import { WebGLPreviewer } from '../lib/webglRenderer'
+import { isRecipeFile, preparePhotoFile } from '../lib/photoUpload'
+import { toast } from 'sonner'
 import {
+  RotateCw,
   SplitSquareVertical,
+  TriangleAlert,
   Upload,
   Image as ImageIcon,
 } from 'lucide-react'
+
+type RotationDeg = 0 | 90 | 180 | 270
+
+// Draw the image rotated clockwise by deg onto a fresh canvas.
+function buildRotatedCanvas(img: HTMLImageElement, deg: RotationDeg): HTMLCanvasElement {
+  const swap = deg === 90 || deg === 270
+  const canvas = document.createElement('canvas')
+  canvas.width = swap ? img.naturalHeight : img.naturalWidth
+  canvas.height = swap ? img.naturalWidth : img.naturalHeight
+  const ctx = canvas.getContext('2d')
+  if (ctx) {
+    ctx.translate(canvas.width / 2, canvas.height / 2)
+    ctx.rotate((deg * Math.PI) / 180)
+    ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2)
+  }
+  return canvas
+}
 
 interface PreviewViewportProps {
   currentImageSrc: string | null
@@ -41,14 +62,28 @@ export const PreviewViewport: React.FC<PreviewViewportProps> = ({
   const [splitPos, setSplitPos] = useState<number>(0.5) // 0 to 1
   const [isDraggingSlider, setIsDraggingSlider] = useState<boolean>(false)
   const [isDragOver, setIsDragOver] = useState<boolean>(false)
+  // Keyed by source so switching photos automatically clears a stale error.
+  const [loadError, setLoadError] = useState<{ src: string; message: string } | null>(null)
+  const loadIdRef = useRef(0)
+  // Rotation is keyed by photo so a new photo always starts unrotated.
+  const [rotation, setRotation] = useState<{ src: string | null; deg: RotationDeg }>({
+    src: null,
+    deg: 0,
+  })
+  const rotationDeg: RotationDeg = rotation.src === currentImageSrc ? rotation.deg : 0
+  const rotationDegRef = useRef<RotationDeg>(0)
+  // Pre-rotated source fed to the renderer (and the side-by-side original).
+  const rotatedSourceRef = useRef<HTMLCanvasElement | null>(null)
+  const originalCanvasRef = useRef<HTMLCanvasElement | null>(null)
 
   // Initialize or re-attach WebGL Previewer if canvas changes
   const getOrCreatePreviewer = useCallback(() => {
     if (!canvasRef.current) return null
     if (!previewerRef.current || previewerRef.current.getCanvas() !== canvasRef.current) {
       previewerRef.current = new WebGLPreviewer(canvasRef.current)
-      if (originalImgRef.current) {
-        previewerRef.current.setImage(originalImgRef.current)
+      const source = rotatedSourceRef.current ?? originalImgRef.current
+      if (source) {
+        previewerRef.current.setImage(source)
       }
     }
     return previewerRef.current
@@ -69,22 +104,68 @@ export const PreviewViewport: React.FC<PreviewViewportProps> = ({
     previewer.render(recipeSettings, effectiveSplit)
   }, [getOrCreatePreviewer, recipeSettings, splitPos, isHoldingCompare, viewMode])
 
-  // Load and update image
+  // Latest render function for async image-load callbacks (kept in a ref so
+  // loading below only re-runs when the photo source itself changes).
+  const renderFrameRef = useRef(renderFrame)
+  useEffect(() => {
+    renderFrameRef.current = renderFrame
+    rotationDegRef.current = rotationDeg
+  })
+
+  // Rebuild the pre-rotated source from the loaded original and push it to
+  // both panes. Always rotates from the pristine original, never cumulatively.
+  const applyRotation = useCallback(
+    (deg: RotationDeg) => {
+      const img = originalImgRef.current
+      if (!img || !img.naturalWidth) return
+      const rotated = buildRotatedCanvas(img, deg)
+      rotatedSourceRef.current = rotated
+      const previewer = getOrCreatePreviewer()
+      if (previewer) {
+        previewer.setImage(rotated)
+        renderFrameRef.current()
+      }
+      const originalCanvas = originalCanvasRef.current
+      if (originalCanvas) {
+        originalCanvas.width = rotated.width
+        originalCanvas.height = rotated.height
+        originalCanvas.getContext('2d')?.drawImage(rotated, 0, 0)
+      }
+    },
+    [getOrCreatePreviewer]
+  )
+
+  const handleRotate = useCallback(() => {
+    if (!currentImageSrc || !originalImgRef.current) return
+    const next = ((rotationDegRef.current + 90) % 360) as RotationDeg
+    setRotation({ src: currentImageSrc, deg: next })
+    applyRotation(next)
+  }, [currentImageSrc, applyRotation])
+
+  // Load the image only when its source changes — never on recipe/slider
+  // changes (those just re-render via the renderFrame effect below).
   useEffect(() => {
     if (!currentImageSrc) return
 
+    const loadId = ++loadIdRef.current
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.src = currentImageSrc
     img.onload = () => {
+      if (loadIdRef.current !== loadId) return // a newer upload superseded this one
       originalImgRef.current = img
-      const previewer = getOrCreatePreviewer()
-      if (previewer) {
-        previewer.setImage(img)
-        renderFrame()
-      }
+      // A new photo always starts unrotated; rebuild from the pristine load.
+      applyRotation(0)
     }
-  }, [currentImageSrc, getOrCreatePreviewer, renderFrame])
+    img.onerror = () => {
+      if (loadIdRef.current !== loadId) return
+      setLoadError({
+        src: currentImageSrc,
+        message:
+          'This photo could not be displayed. Try a JPEG, PNG, WebP, or TIFF export — some HEIC files cannot be decoded by browsers.',
+      })
+    }
+  }, [currentImageSrc, getOrCreatePreviewer, applyRotation])
 
   useEffect(() => {
     renderFrame()
@@ -92,7 +173,7 @@ export const PreviewViewport: React.FC<PreviewViewportProps> = ({
 
   // Global Paste Handler (`Cmd+V` / `Ctrl+V`)
   useEffect(() => {
-    const handlePaste = (e: ClipboardEvent) => {
+    const handlePaste = async (e: ClipboardEvent) => {
       const items = e.clipboardData?.items
       if (!items) return
 
@@ -100,8 +181,12 @@ export const PreviewViewport: React.FC<PreviewViewportProps> = ({
         if (items[i].type.indexOf('image') !== -1) {
           const blob = items[i].getAsFile()
           if (blob) {
-            const url = URL.createObjectURL(blob)
-            onImageChanged(url)
+            const prepared = await preparePhotoFile(blob as File)
+            if ('rejection' in prepared) {
+              toast.error(prepared.rejection.title, { description: prepared.rejection.message })
+            } else {
+              onImageChanged(prepared.url)
+            }
             e.preventDefault()
             break
           }
@@ -179,7 +264,7 @@ export const PreviewViewport: React.FC<PreviewViewportProps> = ({
     setIsDragOver(false)
   }
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragOver(false)
     const files = e.dataTransfer.files
@@ -187,13 +272,17 @@ export const PreviewViewport: React.FC<PreviewViewportProps> = ({
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
-      if (file.type.startsWith('image/')) {
-        const url = URL.createObjectURL(file)
-        onImageChanged(url)
-        break
-      } else if (file.name.endsWith('.NP3') || file.name.endsWith('.np3')) {
+      if (isRecipeFile(file)) {
         onRecipeDropped?.(file)
+        break
       }
+      const prepared = await preparePhotoFile(file)
+      if ('rejection' in prepared) {
+        toast.error(prepared.rejection.title, { description: prepared.rejection.message })
+      } else {
+        onImageChanged(prepared.url)
+      }
+      break
     }
   }
 
@@ -212,6 +301,23 @@ export const PreviewViewport: React.FC<PreviewViewportProps> = ({
           <div className="absolute inset-0 bg-amber-500/20 border-2 border-dashed border-amber-400 z-50 flex flex-col items-center justify-center pointer-events-none backdrop-blur-sm">
             <ImageIcon className="w-12 h-12 text-amber-300 animate-bounce mb-2" />
             <p className="text-lg font-bold text-amber-200">Drop your photo or .NP3 recipe here</p>
+          </div>
+        )}
+
+        {/* Photo decode error */}
+        {loadError && loadError.src === currentImageSrc && !isDragOver && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-40 max-w-md">
+            <div className="flex items-start gap-2 px-3 py-2 bg-red-950/95 border border-red-500/40 text-red-100 text-xs rounded-lg shadow-xl">
+              <TriangleAlert className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
+              <p>{loadError.message}</p>
+              <button
+                onClick={() => setLoadError(null)}
+                className="ml-1 shrink-0 text-red-300 hover:text-white font-bold"
+                aria-label="Dismiss"
+              >
+                ×
+              </button>
+            </div>
           </div>
         )}
 
@@ -254,9 +360,8 @@ export const PreviewViewport: React.FC<PreviewViewportProps> = ({
               <span className="absolute top-4 left-4 z-10 px-2 py-0.5 bg-black/75 text-neutral-300 text-[10px] font-mono rounded backdrop-blur border border-white/10">
                 ORIGINAL
               </span>
-              <img
-                src={currentImageSrc}
-                alt="Original"
+              <canvas
+                ref={originalCanvasRef}
                 className="max-w-full max-h-full object-contain rounded shadow-lg"
               />
             </div>
@@ -353,28 +458,17 @@ export const PreviewViewport: React.FC<PreviewViewportProps> = ({
           </div>
         </div>
 
-        {/* Right: View mode status & GitHub link (Bottom Right Corner) */}
-        <div className="flex items-center gap-3">
-          <span>
-            {viewMode === 'split'
-              ? `Split: ${Math.round(splitPos * 100)}%`
-              : viewMode === 'side-by-side'
-              ? 'Side-by-Side'
-              : 'Compare'}
-          </span>
-          <span className="text-neutral-300 dark:text-neutral-700">•</span>
-          <a
-            href="https://github.com/shouryan01/Nikon-Recipes"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors font-sans"
-            title="GitHub Repository"
+        {/* Right: Rotate */}
+        <div className="flex items-center">
+          <button
+            onClick={handleRotate}
+            disabled={!currentImageSrc}
+            title="Rotate photo 90° clockwise"
+            className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors font-sans disabled:opacity-40 disabled:pointer-events-none"
           >
-            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-            </svg>
-            <span className="font-medium">GitHub</span>
-          </a>
+            <RotateCw className="w-3.5 h-3.5" />
+            <span className="font-medium">Rotate{rotationDeg !== 0 ? ` ${rotationDeg}°` : ''}</span>
+          </button>
         </div>
       </div>
     </div>

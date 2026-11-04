@@ -1,120 +1,120 @@
-<p align="center">
-  <img src="brand/nef-github-banner.png" alt="nef — Nikon Picture Control & RAW Recipe Studio" width="100%" />
-</p>
+# Cull Studio + Nikon Recipes — Meta Hackathon
 
-# nef · Nikon Creative Picture Control Recipes
+An AI-assisted culling and recipe studio for Nikon photographers. Import a folder of
+photos, get Meta-ranked review with plain-language reasons, talk to your pictures to
+regrade them, and discover flexible Picture Control recipes in the browser — then
+take the look back to your camera as a real `.NP3` file.
 
-A collection of all **142 Nikon Creative Picture Control recipes** (.NP3 / .NCP files) for Nikon Z-series cameras. These files can be loaded directly into a compatible Nikon camera or via Nikon's NX Studio software to instantly apply a distinct color grade or film simulation in-camera.
+> **Branch note:** everything hackathon lives on `hackathon/cull-recipe-studio`.
+> Nothing here is merged. The camera-pipeline project underneath is
+> [Nikon-Recipes](https://github.com/shouryan01/Nikon-Recipes) (`main`).
 
-Up to date as of Aug 19, 2026.
+## The 60-second demo
 
----
+1. **Discover** — browse 236 recipes, click one, watch a portrait transform in the
+   browser. Drag the before/after slider.
+2. **Chat** — type *"make it softer"* or *"reduce the intensity of the colors"* and
+   watch the sliders move themselves. Press **Mic** and just say it.
+3. **Favorites** — star recipes you love, then ask *"what is similar about my fav
+   recipes?"* The assistant reads your taste back to you (it will call out an
+   all-black-and-white set) and blends a new filter from your picks. Export it as
+   `.NP3` straight to your SD card path.
+4. **Cull** — choose a folder of photos, press **✨ AI analysis**. Every photo is
+   scored by Muse Spark, segmented by SAM 3.1, and ranked with composition
+   overlays (rule-of-thirds vs golden-ratio picked per photo), score breakdowns,
+   and rescue previews that erase background tourists via Muse Image.
+5. **Cost** — every Meta call is tracked live. The `$` button in the header shows
+   cumulative spend; the spend page breaks it down by model.
 
-## What Are Picture Control Recipes?
+Built end-to-end with Muse Spark — the chat, the taste blending, even this README's
+demo script came out of the same loop.
 
-Nikon's Creative Picture Controls let you save custom combinations of tone curve, hue, saturation, sharpness, clarity, and other parameters as a reusable `.NP3` preset. They can be applied straight out of camera to photos (JPEGs or RAW), or applied to RAW files directly in NX Studio.
+## Features
 
----
+| Area | What it does |
+| --- | --- |
+| Discover | 236-recipe library with search, category/creator filters, and a Favorites-only view. Live WebGL preview: tone curve, blender, wheels, split/toggle compare, rotate, sample photos or your own upload. |
+| Chat + MCP tools | Muse Spark interprets vague asks (*"moodier"*, *"dreamier"*) into validated slider patches. Tool calls echo in the UI and move real controls. Text and voice input. |
+| Favorites → taste | Star recipes anywhere; the assistant explains what they share (colors, shadows, contrast, mood) and proposes a Taste Blend filter from your averaged values. Favorites persist across restarts. |
+| `.NP3` round-trip | Import any `.NP3` (drop it on the preview) and export the current settings back out for `NIKON/CUSTOMPC` on your SD card. |
+| Cull review | Folder or multi-upload import (shrunk in-browser to 768px working copies). One-by-one review with Keep/Reject/Star, your 1–5 score blending with Meta's, keyboard shortcuts, undo-safe picks that move files plus sidecars. |
+| Composition overlays | Per-photo guide selection from SAM output: rule-of-thirds grid, phi grid, center cross, subject ring, horizon-tilt line, distraction boxes. Toggleable per photo. |
+| Rescue previews | Muse Image cleanup for flagged frames — removes background distractions, keeps subject and light. |
+| Cost tracking | Every live call (Spark, SAM, voice, image) is counted and priced with placeholder rates in `/cost`, persisted across server restarts in `cull-studio/data/cost.json`. `$` button in the header; JSON at `/api/cost`. |
 
-## Folder Structure
+## Getting started
+
+Prerequisites: **Node 20+**, **ffmpeg** (voice transcription + preview prep), and a
+Meta API key.
+
+```bash
+# 1. API key (never committed — cull-studio/.env is git-ignored)
+echo 'MODEL_API_KEY=your-key-here' > cull-studio/.env
+
+# 2. Start the API (port 4173, LIVE when the key is set, mocks otherwise)
+npm start --prefix cull-studio
+
+# 3. Start the web app (port 5173) — new terminal
+cd web && npm install && npm run dev -- --host 127.0.0.1 --port 5173
+
+# 4. Open http://127.0.0.1:5173 in your browser
+```
+
+No key? Everything still runs — the server falls back to deterministic mocks and
+says so on the health endpoint.
+
+## Configuration
+
+| Variable | Where | Default | What |
+| --- | --- | --- | --- |
+| `MODEL_API_KEY` | `cull-studio/.env` | — | Turns on LIVE Meta calls. Absent = mock mode. |
+| `CULL_MOCK` | env | — | Set `1` to force mocks even with a key. |
+| `PORT` | env | `4173` | API port. |
+| `COST_SPARK_CALL` | env | `0.02` | Placeholder $/call for `muse-spark-1.3`. |
+| `COST_SAM_CALL` | env | `0.01` | Placeholder $/call for `sam-3.1`. |
+| `COST_VOICE_CALL` | env | `0.005` | Placeholder $/call for voice transcribe. |
+| `COST_IMAGE_CALL` | env | `0.02` | Placeholder $/call for `muse-image-1.0`. |
+
+Costs are estimates until real price-book values are set — that's stated on the
+spend page itself.
+
+## API cheat sheet
+
+Base `http://127.0.0.1:4173`. Full contract: [cull-studio/docs/specs](cull-studio/docs/specs).
+
+| Endpoint | What |
+| --- | --- |
+| `GET /api/health` | Live vs mock, key present, model IDs. |
+| `GET /cost` · `GET /api/cost[?sessionId=]` | Human page · JSON spend totals. |
+| `POST /api/chat` | Chat with tool-call patches (`{messages, context, settings, tools?}`). |
+| `POST /api/voice/audio` | Raw audio → transcript + parsed command. |
+| `POST /api/upload-begin` → `/api/upload` → `/api/upload-finish` | Browser upload flow (pass `defer:true` to skip auto-analysis). |
+| `POST /api/analyze` | Score a stored session on demand. |
+| `POST /api/decision` | Keep/reject/star/note; returns frame + distilled taste + counts. |
+| `POST /api/image/rescue` | Muse Image cleanup for a flagged frame. |
+| `GET /preview/:sid/:file` · `GET /rescue/:sid/:file` | Preview and cleanup files. |
+
+## Project layout
 
 ```
-Nikon-Recipes/
-├── Nikon Creators/        # 112 official recipes from Nikon's global creator program
-├── Color Grading/         # 30 official Nikon color grading presets
-├── NikonPC/               # Classic Nikon Picture Controls from nikonpc.com
-└── Third Party Creators/  # Recipes from independent photographers
+web/                    # React + Vite app (Discover, Cull, chat, cost button)
+  src/lib/              # colorEngine + WebGL preview, MCP tools, taste math
+cull-studio/            # Node API: sessions, picks, Meta adapters, cost ledger
+  src/meta/             # models.mjs (all model IDs), real + mock adapters
+  server/               # index.mjs routes, picks, NEF preview extraction
+  tests/app.test.mjs    # node:test suite (run: npm test --prefix cull-studio)
+api/taste.py            # Python mirror of the taste-averaging helper
+web/scripts/            # recipe build + NX Studio ground-truth verification
 ```
 
----
+## Honest limitations (judge notes)
 
-## Collections
-
-### Nikon Creators — 112 recipes
-Official recipes contributed by photographers and videographers in Nikon's global creator program. Covers a wide range of moods and styles — film emulation, cinematic looks, portraits, landscapes, street, and more. A few highlights:
-
-| Recipe | Creator | Vibe |
-|---|---|---|
-| `GoldenHourGlow` | D'Ann | Warm golden-hour glow |
-| `CineM` / `BlueM` / `PurpleM` | LUIZCLAS | Cinematic tonal biases |
-| `VINTAGEPort` / `VINTAGEFla` | Fuji | Vintage film emulation |
-| `DGFilmLook` | Danny G | Film-inspired look |
-| `MatteBlueGray` | tanco | Matte teal/gray tones |
-| `NeonGlow` | Brandon W | Neon-lit street scenes |
-| `MoodyShadows` | Gilmar | Deep shadow contrast |
-| `SoftFilm` / `DawnHues` | Leno | Soft, pastel film look |
-| `CineBias` series | Various | Cinematic color biases (BB, CC, TC, WC, Red, Offset) |
-| `BritFilmBW` / `USAFilmBW` | Vincent | Black & white film emulations |
-
-### Color Grading — 30 recipes
-Nikon's official Color Grading Picture Control presets. Organized into thematic series:
-
-- **Bleach Bypass** — desaturated, high-contrast silver-retention look
-- **Color Mode** series (`Bu`, `Gn`, `TealOr`, `Ye`) — bold single-hue and dual-hue color grades, in both `a` and `b` intensity variants
-- **Negative** series — diverse color negative emulations spanning cyan-blue, green-cyan, red-cyan, teal, yellow-green, and yellow tones, across multiple strength variants
-
-### NikonPC
-Classic Nikon Picture Control presets:
-
-- `Kodachrome.NP3` — emulates the iconic warm, punchy Kodachrome film
-- `Kodak T-Max 400.NCP` — emulates the fine-grain monochrome T-Max 400 film stock
-
-### Third Party Creators
-
-If you are an independent creator who wants to show off their recipes, submit a PR!
-
-#### Alex Armitage
-Film-inspired emulations based on real analog stocks:
-`Ektar 100`, `Kodak Gold 200`, `Portra 800`, `Provia 100F`, `Warm Autumn`
-
-#### Filmstill
-A diverse set of film stock simulations and cinematic looks:
-`Classic Chrome`, `Filmic B&W`, `Filmic`, `Nostalgic Negative`, `Goldmatic`, `ARTE B&W`, `Astia`, `Classic Neg`, `Portra`, `Velvia`, `KOLORA`, `KOLORA Pushed`
-
-#### Scott Tucker
-Street and portrait-oriented film emulations. Full details at [scotttuckerphoto.com](https://www.scotttuckerphoto.com/blog/my-first-6-nikon-z-recipes-out-now-completely-free):
-`Gold 200`, `Ilford 400` (three variants), `Leiter`, `Leiter CLR`, `Vintage Film`, `Vintage Film HI`
-
-#### Stephen Morais
-An extensive library of analog film stock emulations:
-`Agfa Ultra 100`, `Cubano`, `Ektachrome E100`, `Fuji 400H`, `Fuji Provia 100F`, `Fuji Solaris 100`, `Kodachrome`, `Kodak Ektar 100`, `Kodak Gold 200` (standard & push), `Kodak Portra 160/400/800`, `Leica STD`, `Leica Vivid`, `LoFi`, `Optima Colour 200`, `Lomography 3`
-
----
-
-## How I Downloaded The Recipes
-
-### Via Nikon Imaging Cloud
-
-> Requires an **Expeed 7** camera and a [Nikon Imaging Cloud](https://imagingcloud.nikon.com/) account.
-
-1. **Connect your camera** to Nikon Imaging Cloud via the camera's network settings menu.
-2. **Browse and save recipes** at [imagingcloud.nikon.com/recipe/release](https://imagingcloud.nikon.com/recipe/release) — add favorites to Saved Recipes, then send up to 9 at a time to your camera.
-3. **Shoot one RAW photo** with each newly loaded Picture Control active.
-4. **In NX Studio**, open each photo and go to **Basic Edit Palettes → Picture Control → [recipe name] → Add to Custom Picture Controls** and save.
-5. Export the custom picture control to a file.
-
-As you can see, this quite a manual process. That is why I went through all the profiles so that others may simply download their favorite profile with ease.
-
-### Manually via SD Card
-
-1. Download the recipe files (`.NP3` / `.NCP`).
-2. Insert your SD card into a card reader.
-3. Create a `NIKON` folder at the root of the SD card.
-4. Inside `NIKON`, create a `CUSTOMPC` folder.
-5. Copy the `*.NP3` (or `.NCP`) files into `/NIKON/CUSTOMPC/` on the card.
-6. Insert the card into **slot 1** of the camera.
-7. Press the **MENU** button.
-8. Open the **Shooting** menu.
-9. Go to **Manage Picture Control → Load/Save**.
-10. Select **Copy to camera**.
-11. Select the desired profile and confirm.
-12. Load the saved camera profile to apply it.
-
----
-
-## File Formats
-
-| Extension | Type |
-|---|---|
-| `.NP3` | Nikon Creative Picture Control (color) |
-| `.NCP` | Nikon Creative Picture Control (classic/monochrome) |
+- The browser preview is a calibrated approximation of Nikon's pipeline, fitted
+  against NX Studio ground truth — close, not pixel-perfect. True Nikon rendering
+  happens in-camera from the exported `.NP3`.
+- Clarity and sharpening are stored in `.NP3` and round-trip correctly, but the
+  WebGL preview does not apply them yet. The chat says so when relevant.
+- Uploaded cull photos are 768px working copies (fast uploads, tiny API bills);
+  server-path imports keep full resolution. Picks move whichever copy was imported.
+- Image rescue, voice, and taste distillation need the API key; everything else
+  degrades to mocks by design.

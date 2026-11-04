@@ -1,11 +1,15 @@
 import React, { useState, useMemo } from 'react'
 import type { RecipeItem, PictureControlSettings } from '../types/recipe'
 import { deserialize } from 'nikon-flexible-color-picture-control'
-import { Search, Upload, SlidersHorizontal } from 'lucide-react'
+import { Search, Upload, SlidersHorizontal, Star } from 'lucide-react'
+import { toast } from 'sonner'
+import { preparePhotoFile } from '../lib/photoUpload'
 
 interface RecipeCatalogProps {
   recipes: RecipeItem[]
   activeRecipeId: string | null
+  favoriteIds: string[]
+  onToggleFavorite: (recipe: RecipeItem) => void
   onSelectRecipe: (recipe: RecipeItem) => void
   onCustomRecipeLoaded: (recipe: RecipeItem) => void
   onImageChanged?: (src: string) => void
@@ -14,6 +18,8 @@ interface RecipeCatalogProps {
 export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
   recipes,
   activeRecipeId,
+  favoriteIds,
+  onToggleFavorite,
   onSelectRecipe,
   onCustomRecipeLoaded,
   onImageChanged,
@@ -21,6 +27,7 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [selectedCreator, setSelectedCreator] = useState<string>('All')
+  const [favoritesOnly, setFavoritesOnly] = useState(false)
 
   // Available categories
   const categories = useMemo(() => {
@@ -51,14 +58,32 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
 
       const matchCategory = selectedCategory === 'All' || r.category === selectedCategory
       const matchCreator = selectedCreator === 'All' || r.creator === selectedCreator
+      const matchFavorite = !favoritesOnly || favoriteIds.includes(r.id)
 
-      return matchSearch && matchCategory && matchCreator
+      return matchSearch && matchCategory && matchCreator && matchFavorite
     })
-  }, [recipes, search, selectedCategory, selectedCreator])
+  }, [recipes, search, selectedCategory, selectedCreator, favoritesOnly, favoriteIds])
+
+  // Handle uploading a user photo for preview (RAW files are decoded via
+  // their embedded JPEG preview).
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    // Reset so picking the same file again still fires onChange.
+    e.target.value = ''
+    if (!file || !onImageChanged) return
+    const prepared = await preparePhotoFile(file)
+    if ('rejection' in prepared) {
+      toast.error(prepared.rejection.title, { description: prepared.rejection.message })
+      return
+    }
+    onImageChanged(prepared.url)
+  }
 
   // Handle uploading custom .NP3 file
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    // Reset so importing the same file again still fires onChange.
+    e.target.value = ''
     if (!file) return
 
     const reader = new FileReader()
@@ -110,15 +135,37 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
 
         {/* Category Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 pr-1">
+          <button
+            onClick={() => {
+              setFavoritesOnly((v) => {
+                if (!v) {
+                  setSelectedCategory('All')
+                  setSelectedCreator('All')
+                  setSearch('')
+                }
+                return !v
+              })
+            }}
+            title="Show only starred recipes"
+            className={`text-[10px] whitespace-nowrap px-2.5 py-1 rounded-md font-medium shrink-0 transition-colors flex items-center gap-1 ${
+              favoritesOnly
+                ? 'bg-[#FFE100] text-black font-semibold shadow-xs'
+                : 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-800'
+            }`}
+          >
+            <Star className="w-3 h-3" fill={favoritesOnly ? 'currentColor' : 'none'} />
+            Favorites{favoriteIds.length ? ` (${favoriteIds.length})` : ''}
+          </button>
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => {
                 setSelectedCategory(cat)
                 setSelectedCreator('All')
+                setFavoritesOnly(false)
               }}
               className={`text-[10px] whitespace-nowrap px-2.5 py-1 rounded-md font-medium shrink-0 transition-colors ${
-                selectedCategory === cat
+                !favoritesOnly && selectedCategory === cat
                   ? 'bg-[#FFE100] text-black font-semibold shadow-xs'
                   : 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-800'
               }`}
@@ -151,7 +198,7 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
       <div className="flex-1 overflow-y-auto divide-y divide-neutral-200 dark:divide-neutral-800/50">
         {filteredRecipes.length === 0 ? (
           <div className="text-center py-10 px-4 text-xs text-neutral-500">
-            No recipes matching "{search}"
+            {favoritesOnly && !search ? 'No starred recipes yet — tap the star on any recipe.' : `No recipes matching "${search}"`}
           </div>
         ) : (
           filteredRecipes.map((r) => {
@@ -181,14 +228,23 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
                   </div>
                 </div>
 
-                {/* Small indicator tags */}
-                <div className="flex flex-col items-end gap-1 shrink-0">
+                {/* Star + small indicator tags */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onToggleFavorite(r) }}
+                    title={favoriteIds.includes(r.id) ? 'Unstar favorite' : 'Star as favorite'}
+                    className={favoriteIds.includes(r.id) ? 'text-[#a18200] dark:text-[#FFE100]' : 'text-neutral-300 dark:text-neutral-600 hover:text-neutral-500'}
+                  >
+                    <Star className="w-3.5 h-3.5" fill={favoriteIds.includes(r.id) ? 'currentColor' : 'none'} />
+                  </button>
+                  <div className="flex flex-col items-end gap-1">
                   {hasGrading ? (
                     <span className="w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400/80 shadow-sm" title="Color Grading active" />
                   ) : null}
                   {hasCurve ? (
                     <span className="text-[9px] font-mono text-neutral-400 dark:text-neutral-500">CURVE</span>
                   ) : null}
+                  </div>
                 </div>
               </div>
             )
@@ -215,12 +271,9 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
             <span className="truncate">upload photo</span>
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,.nef,.nrw,.arw,.cr2,.cr3,.dng,.raf,.rw2,.orf,.pef,.heic,.heif,.tif,.tiff"
               className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) onImageChanged(URL.createObjectURL(file))
-              }}
+              onChange={handlePhotoUpload}
             />
           </label>
         )}

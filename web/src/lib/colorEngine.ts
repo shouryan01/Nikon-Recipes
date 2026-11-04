@@ -215,6 +215,11 @@ export function buildToneLut(settings: PictureControlSettings): Uint8Array {
     }
 
     // 6. Highlights (-100..+100)
+    // Calibrated against NX Studio ground truth: negative (darkening)
+    // highlights respond superlinearly — mild values behave nominally
+    // (BleachBypass -20 unchanged) while extreme values need up to ~2x
+    // (SunkissedWarm -76). HazyMemories -35 lands in between and is neutral
+    // to the change. Positive branch untouched (no evidence).
     if (highlights !== 0) {
       const h = highlights / 100
       if (y > 0.28) {
@@ -224,7 +229,8 @@ export function buildToneLut(settings: PictureControlSettings): Uint8Array {
           y += h * (23.2 / 255) * wave
         } else {
           const pull = Math.pow(t, 1.45) * (1 - 0.18 * Math.pow(t, 4))
-          y += h * (23.5 / 255) * pull
+          const hinge = 1 + Math.max(0, Math.abs(h) * 100 - 20) / 56
+          y += h * ((23.5 * hinge) / 255) * pull
         }
       }
     }
@@ -280,7 +286,14 @@ export function buildBlenderLut(settings: PictureControlSettings): { lut: Uint8A
       if (dist < span) {
         const weight = 0.5 * (1 + Math.cos((dist / span) * Math.PI))
         dhTotal += (ch.hue / 100) * 32 * weight
-        dsRatio += (ch.chroma / 100) * 0.62 * weight
+        // Calibrated against NX Studio ground truth: NX compresses positive
+        // (saturating) blue chroma to about half the nominal amount, while
+        // negative (desaturating) values apply in full. Other channels are
+        // unaffected. (Fitted on HazyMemories_Julia blue +30 vs. AirGreen
+        // blue -20, DSC_0105.NEF + me.NEF benchmark.)
+        const chromaScale =
+          name === 'blue' && ch.chroma > 0 ? 0.31 : 0.62
+        dsRatio += (ch.chroma / 100) * chromaScale * weight
         dbCoeff += (ch.brightness / 100) * 0.24 * weight
       }
     }
@@ -294,11 +307,16 @@ export function buildBlenderLut(settings: PictureControlSettings): { lut: Uint8A
   return { lut, active: true }
 }
 
-// Convert Nikon Color Grading wheel (hue 0..360, chroma 0..100) to (dR, dG, dB) in 0..255 scale
+// Convert Nikon Color Grading wheel (hue 0..360, chroma 0..100) to (dR, dG, dB) in 0..255 scale.
+// Calibrated against NX Studio SaveProcess ground truth (DSC_0105.NEF +
+// HazyMemories_Julia, 10-recipe me.NEF benchmark): NX applies color-grading
+// tints ~1.25x stronger than the raw wheel amplitudes.
+const GRADING_TINT_GAIN = 1.25
+
 export function wheelToTint(hue: number, chroma: number): [number, number, number] {
   if (!chroma) return [0, 0, 0]
   const rad = ((hue - 12) * Math.PI) / 180
-  const c = chroma / 100
+  const c = (chroma / 100) * GRADING_TINT_GAIN
   const dr = Math.cos(rad) * 58 * c
   const dg = Math.cos(rad - 2.15) * 38 * c
   const db = Math.cos(rad + 2.15) * 36 * c

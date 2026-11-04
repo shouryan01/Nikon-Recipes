@@ -1,0 +1,12 @@
+{
+  "name": "cull-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-first semantic visual culling and grading studio (Meta hackathon). Meta Model API layer is stubbed: no API calls are made in this build.",
+  "scripts": {
+    "start": "node server/index.mjs",
+    "test": "node --test tests/app.test.mjs"
+  },
+  "engines": { "node": ">=20" }
+}
