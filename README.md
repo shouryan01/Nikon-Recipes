@@ -5,6 +5,18 @@ photos, get Meta-ranked review with plain-language reasons, talk to your picture
 regrade them, and discover flexible Picture Control recipes in the browser — then
 take the look back to your camera as a real `.NP3` file.
 
+## Why I built this
+
+I started the original recipes project back in the summer — a straightforward, no-AI
+toolkit for working with Nikon Picture Controls. A few weeks ago I had the idea of
+wrapping an AI app around it: something to help photographers with image recipes
+and with photo culling. Both features were 100% built for my own personal workflow —
+I open-source my work for the community, so they're here for anyone who wants them.
+
+Honestly, the r/Nikon crowd is usually pretty anti-AI, which is why adding AI to
+this project had never crossed my mind before. But this tool turned out to be
+genuinely useful — it doesn't replace taste, it learns it.
+
 ![Discover mode — recipe library, live preview, inspector, and Muse chat](web/docs/screenshots/discover.png)
 
 *Discover: browse 236 recipes, watch the transform live, and tell the chat what to change.*
