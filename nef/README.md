@@ -1,4 +1,4 @@
-# Cull Studio
+# nef
 
 Semantic visual culling and grading studio for Nikon NEF shoots (Meta hackathon).
 

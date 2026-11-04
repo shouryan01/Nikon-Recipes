@@ -67,7 +67,7 @@ export function setSlider(
 }
 
 // Local intent parser: "more contrast", "contrast 20", "less shadows".
-// Live Muse Spark calls go through the cull-studio server when reachable;
+// Live Muse Spark calls go through the nef server when reachable;
 // this parser is the guaranteed fallback so the demo never stalls.
 export function parseLocalTool(text: string, settings: PictureControlSettings): ToolResult | null {
   const lower = text.toLowerCase()

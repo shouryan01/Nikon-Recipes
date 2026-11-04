@@ -1,4 +1,4 @@
-// Cull Studio local service. File handling + UI only: folder import, NEF
+// nef local service. File handling + UI only: folder import, NEF
 // preview extraction, picks moves. ALL intelligence comes from src/meta
 // adapters — currently deterministic mocks, with NO network calls.
 import http from "node:http";
@@ -124,7 +124,7 @@ function costPage(report) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="refresh" content="30">
-<title>Cull Studio · API spend</title>
+<title>nef · API spend</title>
 <style>
   body{font-family:-apple-system,system-ui,sans-serif;background:#0a0a0a;color:#e5e5e5;margin:0;padding:32px}
   main{max-width:640px;margin:0 auto}
@@ -419,7 +419,7 @@ const server = http.createServer(async (req, res) => {
 });
 function counts(s) { const c = { keep: 0, reject: 0, star: 0, undecided: 0 }; for (const f of s.frames) c[f.decision || "undecided"] = (c[f.decision || "undecided"] || 0) + 1; return c; }
 
-server.listen(PORT, "127.0.0.1", () => console.log(`Cull Studio http://127.0.0.1:${PORT}  (Meta API ${isApiEnabled() ? "LIVE" : "mock mode"})`));
+server.listen(PORT, "127.0.0.1", () => console.log(`nef http://127.0.0.1:${PORT}  (Meta API ${isApiEnabled() ? "LIVE" : "mock mode"})`));
 
 function demoSvg(i) {
   const rnd = seedFrom("demo-" + i); const h1 = Math.floor(rnd() * 360), h2 = (h1 + 40 + Math.floor(rnd() * 80)) % 360;

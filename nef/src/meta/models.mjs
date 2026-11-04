@@ -2,7 +2,7 @@
 // hard-codes a model ID, so a version bump is a one-line change here.
 //
 // Live mode is on when MODEL_API_KEY is present (server loads it from
-// cull-studio/.env at startup) unless CULL_MOCK=1 forces mock mode.
+// nef/.env at startup) unless CULL_MOCK=1 forces mock mode.
 // Adapters fall back to deterministic mocks per-frame if a call fails.
 export function isApiEnabled() {
   return Boolean(process.env.MODEL_API_KEY) && process.env.CULL_MOCK !== "1";

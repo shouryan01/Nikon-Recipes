@@ -1,4 +1,4 @@
-# Cull Studio + Nikon Recipes — Meta Hackathon
+# nef — Meta Hackathon
 
 An AI-assisted culling and recipe studio for Nikon photographers. Import a folder of
 photos, get Meta-ranked review with plain-language reasons, talk to your pictures to
@@ -40,7 +40,7 @@ demo script came out of the same loop.
 | Cull review | Folder or multi-upload import (shrunk in-browser to 768px working copies). One-by-one review with Keep/Reject/Star, your 1–5 score blending with Meta's, keyboard shortcuts, undo-safe picks that move files plus sidecars. |
 | Composition overlays | Per-photo guide selection from SAM output: rule-of-thirds grid, phi grid, center cross, subject ring, horizon-tilt line, distraction boxes. Toggleable per photo. |
 | Rescue previews | Muse Image cleanup for flagged frames — removes background distractions, keeps subject and light. |
-| Cost tracking | Every live call (Spark, SAM, voice, image) is counted and priced with placeholder rates in `/cost`, persisted across server restarts in `cull-studio/data/cost.json`. `$` button in the header; JSON at `/api/cost`. |
+| Cost tracking | Every live call (Spark, SAM, voice, image) is counted and priced with placeholder rates in `/cost`, persisted across server restarts in `nef/data/cost.json`. `$` button in the header; JSON at `/api/cost`. |
 
 ## Getting started
 
@@ -48,11 +48,11 @@ Prerequisites: **Node 20+**, **ffmpeg** (voice transcription + preview prep), an
 Meta API key.
 
 ```bash
-# 1. API key (never committed — cull-studio/.env is git-ignored)
-echo 'MODEL_API_KEY=your-key-here' > cull-studio/.env
+# 1. API key (never committed — nef/.env is git-ignored)
+echo 'MODEL_API_KEY=your-key-here' > nef/.env
 
 # 2. Start the API (port 4173, LIVE when the key is set, mocks otherwise)
-npm start --prefix cull-studio
+npm start --prefix nef
 
 # 3. Start the web app (port 5173) — new terminal
 cd web && npm install && npm run dev -- --host 127.0.0.1 --port 5173
@@ -67,7 +67,7 @@ says so on the health endpoint.
 
 | Variable | Where | Default | What |
 | --- | --- | --- | --- |
-| `MODEL_API_KEY` | `cull-studio/.env` | — | Turns on LIVE Meta calls. Absent = mock mode. |
+| `MODEL_API_KEY` | `nef/.env` | — | Turns on LIVE Meta calls. Absent = mock mode. |
 | `CULL_MOCK` | env | — | Set `1` to force mocks even with a key. |
 | `PORT` | env | `4173` | API port. |
 | `COST_SPARK_CALL` | env | `0.02` | Placeholder $/call for `muse-spark-1.3`. |
@@ -80,7 +80,7 @@ spend page itself.
 
 ## API cheat sheet
 
-Base `http://127.0.0.1:4173`. Full contract: [cull-studio/docs/specs](cull-studio/docs/specs).
+Base `http://127.0.0.1:4173`. Full contract: [nef/docs/specs](nef/docs/specs).
 
 | Endpoint | What |
 | --- | --- |
@@ -99,10 +99,10 @@ Base `http://127.0.0.1:4173`. Full contract: [cull-studio/docs/specs](cull-studi
 ```
 web/                    # React + Vite app (Discover, Cull, chat, cost button)
   src/lib/              # colorEngine + WebGL preview, MCP tools, taste math
-cull-studio/            # Node API: sessions, picks, Meta adapters, cost ledger
+nef/            # Node API: sessions, picks, Meta adapters, cost ledger
   src/meta/             # models.mjs (all model IDs), real + mock adapters
   server/               # index.mjs routes, picks, NEF preview extraction
-  tests/app.test.mjs    # node:test suite (run: npm test --prefix cull-studio)
+  tests/app.test.mjs    # node:test suite (run: npm test --prefix nef)
 api/taste.py            # Python mirror of the taste-averaging helper
 web/scripts/            # recipe build + NX Studio ground-truth verification
 ```

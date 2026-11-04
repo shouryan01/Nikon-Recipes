@@ -1,4 +1,4 @@
-# 01 · Product spec — Cull Studio
+# 01 · Product spec — nef
 
 Separate Meta-hackathon product. Decoupled from the Nikon recipe pipeline
 (out of scope, not a dependency). Local code does file handling + UI only;
