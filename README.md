@@ -1,5 +1,7 @@
 # nef — Meta Hackathon
 
+[![GitHub stars](https://img.shields.io/github/stars/shouryan01/Nikon-Recipes?style=social)](https://github.com/shouryan01/Nikon-Recipes)
+
 An AI-assisted culling and recipe studio for Nikon photographers. Import a folder of
 photos, get Meta-ranked review with plain-language reasons, talk to your pictures to
 regrade them, and discover flexible Picture Control recipes in the browser — then
@@ -16,6 +18,18 @@ I open-source my work for the community, so they're here for anyone who wants th
 Honestly, the r/Nikon crowd is usually pretty anti-AI, which is why adding AI to
 this project had never crossed my mind before. But this tool turned out to be
 genuinely useful — it doesn't replace taste, it learns it.
+
+The official way of discovering Nikon recipes is awful. That's exactly why a niche
+project like this one earned 250 stars — photographers are hungry for a better
+way. Other companies get this: Fuji and Ricoh make it very easy to share and
+preview photo recipes, but Nikon doesn't. Ironically, Nikon has the best
+technology of all of them, because its recipes are applied to RAW images — but
+almost nobody knows about it, and recipe use in the community is very low.
+
+That is the aim of this project: to help grow the Nikon recipe ecosystem and make
+it easier for me (and others) to create beautiful images from recipes the
+community has worked on. The recipes here are contributed by me, by third-party
+creators, and taken from Nikon's official site.
 
 ![Discover mode — recipe library, live preview, inspector, and Muse chat](web/docs/screenshots/discover.png)
 
