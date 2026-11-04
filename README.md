@@ -5,10 +5,6 @@ photos, get Meta-ranked review with plain-language reasons, talk to your picture
 regrade them, and discover flexible Picture Control recipes in the browser — then
 take the look back to your camera as a real `.NP3` file.
 
-> **Branch note:** everything hackathon lives on `hackathon/cull-recipe-studio`.
-> Nothing here is merged. The camera-pipeline project underneath is
-> [Nikon-Recipes](https://github.com/shouryan01/Nikon-Recipes) (`main`).
-
 ![Discover mode — recipe library, live preview, inspector, and Muse chat](web/docs/screenshots/discover.png)
 
 *Discover: browse 236 recipes, watch the transform live, and tell the chat what to change.*

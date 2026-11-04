@@ -400,7 +400,7 @@ export const CullStudio: React.FC<Props> = ({ onToggleFavorite, favorites, activ
               <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-3">
                 <h3 className="font-semibold mb-1">Composition and color</h3>
                 <p className="text-neutral-600 dark:text-neutral-300">
-                  Guides: rule-of-thirds grid, golden-section band, diagonals, horizon-tilt line, SAM subject box.
+                  Guides: the overlay above is picked per photo — rule-of-thirds or golden-section grid, center cross, subject ring, horizon-tilt line, SAM subject box.
                 </p>
                 <ul className="mt-2 space-y-1 text-neutral-600 dark:text-neutral-300">
                   {colorNotes.map((a, i) => <li key={i}>· {a.note}</li>)}

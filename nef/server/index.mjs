@@ -275,7 +275,7 @@ const server = http.createServer(async (req, res) => {
     if (p === "/api/cost" && req.method === "GET") return json(res, 200, costReport(url.searchParams.get("sessionId")));
     if (p === "/cost" && req.method === "GET") {
       const report = costReport(url.searchParams.get("sessionId"));
-      res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8", "access-control-allow-origin": "*" });
       return res.end(costPage(report));
     }
     if (p.startsWith("/api/session/") && req.method === "GET") { const s = sessions.get(p.split("/")[3]); if (!s) return json(res, 404, { error: "session not found" }); return json(res, 200, { analysing: Boolean(s.analysing), frames: s.frames.map(pub) }); }
